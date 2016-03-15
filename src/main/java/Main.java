@@ -36,11 +36,13 @@ public class Main {
             })
             .get(ctx -> ctx.render(groovyTemplate("index.html")))
             .get("hello", ctx -> {
-				String energy = System.getenv("ENERGY");
-				RelativisticModel.select();
-				Amount<Mass> m = Amount.valueOf(energy).to(KILOGRAM);
-				ctx.render("E=mc^2: 12 GeV = " + m.toString());
-            })
+  RelativisticModel.select();
+
+  String energy = System.getenv("ENERGY");
+
+  Amount<Mass> m = Amount.valueOf(energy).to(KILOGRAM);
+  ctx.render("E=mc^2: " + energy + " = " + m.toString());
+})
             .get("db", ctx -> {
               Connection connection = null;
               Map<String, Object> attributes = new HashMap<>();
