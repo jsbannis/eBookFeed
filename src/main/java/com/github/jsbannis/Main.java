@@ -1,6 +1,7 @@
 package com.github.jsbannis;
 
 import com.github.jsbannis.data.Book;
+import com.github.jsbannis.rss.RssGenerator;
 import com.github.jsbannis.worker.Parser;
 import com.heroku.sdk.jdbc.DatabaseUrl;
 import ratpack.groovy.template.TextTemplateModule;
@@ -40,9 +41,7 @@ public class Main {
             })
             .get(ctx -> ctx.render(groovyTemplate("index.html")))
             .get("books", ctx -> {
-              Parser parser = new Parser();
-              List<Book> books = parser.parse();
-              ctx.render(booksToString(books));
+              ctx.render(new RssGenerator().createRss(new Parser().parse()));
             })
             .get("db", ctx -> {
               Connection connection = null;
