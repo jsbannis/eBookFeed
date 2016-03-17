@@ -111,7 +111,7 @@ public class Parser
                     .ignoreHttpErrors(true)
                     .timeout(2000)
                     .get();
-            return getTextBySelect(document, "div.bookDescription_feature_div", "noscript");
+            return getTextBySelect(document, "div#bookDescription_feature_div", "noscript");
         } catch (IOException e) {
             e.printStackTrace();
         }
