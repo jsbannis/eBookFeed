@@ -58,7 +58,16 @@ public class Parser
                 getAttributeBySelect(bookElement, "href", "div.zg_title", "a"),
                 getTextBySelect(bookElement, "div.zg_reviews", "span.a-icon-alt"),
                 getTextBySelect(bookElement, "div.zg_price", "strong.price"),
-                getAttributeBySelect(bookElement, "src", "div.zg_image", "img"));
+                processImageString(getAttributeBySelect(bookElement, "src", "div.zg_image", "img")));
+    }
+
+    private String processImageString(String imageString) {
+        int i = imageString.lastIndexOf(',');
+        if(i > 0)
+        {
+            imageString = imageString.substring(0, i) + ".jpg";
+        }
+        return imageString;
     }
 
     private String getTextBySelect(Element bookElement, String... selects)
