@@ -17,8 +17,6 @@ import java.util.stream.Collectors;
  * Created by jared on 3/16/2016.
  */
 public class RssGenerator {
-    private static final DateFormat DATE_PARSER = new SimpleDateFormat("yyyy-MM-dd");
-
     public String createRss(List<Book> books) {
         try {
             String feedType = "rss_2.0";
@@ -30,7 +28,7 @@ public class RssGenerator {
             feed.setLink("https://pure-shelf-61800.herokuapp.com/books");
             feed.setDescription("Amazon Top Free Kindle Books");
 
-            List entries = books.stream()
+            List<SyndEntry> entries = books.stream()
                     .map(book -> {
                         SyndEntry entry = new SyndEntryImpl();
                         entry.setTitle(book._title);

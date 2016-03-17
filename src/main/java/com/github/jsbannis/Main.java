@@ -41,7 +41,8 @@ public class Main {
             })
             .get(ctx -> ctx.render(groovyTemplate("index.html")))
             .get("books", ctx -> {
-              ctx.render(new RssGenerator().createRss(new Parser().parse()));
+              ctx.getResponse().contentType("application/rss+xml");
+              ctx.getResponse().send(new RssGenerator().createRss(new Parser().parse()));
             })
             .get("db", ctx -> {
               Connection connection = null;
