@@ -39,7 +39,7 @@ public class RssGenerator {
                         SyndContent description = new SyndContentImpl();
                         description.setType("text/html");
                         description.setValue(
-                                "<img src=\"" + book._image + "\" style=\"max-height: 450px;\"/>"
+                                "<img src=\"" + book._image + "\" style=\"height:450px;\"/>"
                                         + "<p>" + book._byline
                                         + "<p>Rating: " + book._reviews
                                         + "<p>Price: " + book._price);
