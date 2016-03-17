@@ -11,8 +11,9 @@ public class Book {
     public final String _reviews;
     public final String _price;
     public final String _image;
+    public final String _detailedInfo;
 
-    public Book(String rank, String title, String byline, String link, String reviews, String price, String image)
+    public Book(String rank, String title, String byline, String link, String reviews, String price, String image, String detailedInfo)
     {
         _rank = rank;
         _title = title;
@@ -21,6 +22,7 @@ public class Book {
         _reviews = reviews;
         _price = price;
         _image = image;
+        _detailedInfo = detailedInfo;
     }
 
     @Override
@@ -33,6 +35,7 @@ public class Book {
                 ", _reviews='" + _reviews + '\'' +
                 ", _price='" + _price + '\'' +
                 ", _image='" + _image + '\'' +
+                ", _detailedInfo='" + _detailedInfo + '\'' +
                 '}';
     }
 }

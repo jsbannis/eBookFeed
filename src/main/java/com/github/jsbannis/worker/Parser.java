@@ -51,18 +51,21 @@ public class Parser
 
     private Book processBook(Element bookElement)
     {
+        String link = getAttributeBySelect(bookElement, "href", "div.zg_title", "a");
         return new Book(
                 getTextBySelect(bookElement, "span.zg_rankNumber"),
                 getTextBySelect(bookElement, "div.zg_title", "a"),
                 getTextBySelect(bookElement, "div.zg_byline"),
-                getAttributeBySelect(bookElement, "href", "div.zg_title", "a"),
+                link,
                 getTextBySelect(bookElement, "div.zg_reviews", "span.a-icon-alt"),
                 getTextBySelect(bookElement, "div.zg_price", "strong.price"),
-                processImageString(getAttributeBySelect(bookElement, "src", "div.zg_image", "img")));
+                processImageString(getAttributeBySelect(bookElement, "src", "div.zg_image", "img")),
+                getDetailedInfo(link));
     }
 
     private String processImageString(String imageString) {
-        int i = imageString.indexOf(',');
+        int z = imageString.lastIndexOf('/');
+        int i = imageString.indexOf('.', z);
         if(i > 0)
         {
             imageString = imageString.substring(0, i) + ".jpg";
@@ -97,5 +100,16 @@ public class Parser
     private String getURL(int page)
     {
         return BASE + Integer.toString(page);
+    }
+
+    private String getDetailedInfo(String bookUrl)
+    {
+        try {
+            Document document = Jsoup.connect(bookUrl).get();
+            return getTextBySelect(document, "div.bookDescription_feature_div", "noscript");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "";
     }
 }

@@ -40,9 +40,10 @@ public class RssGenerator {
                         description.setType("text/html");
                         description.setValue(
                                 "<img src=\"" + book._image + "\" height=\"450px\"/>"
-                                        + "<p>" + book._byline
-                                        + "<p>Rating: " + book._reviews
-                                        + "<p>Price: " + book._price);
+                                        + "<br>" + book._byline
+                                        + "<br> Rating: " + book._reviews
+                                        + "<br> Price: " + book._price
+                                        + " <p>" + book._detailedInfo);
                         entry.setDescription(description);
                         return entry;
                     })
