@@ -19,7 +19,7 @@ import java.util.stream.Stream;
 public class Parser
 {
     public static final String BASE = "http://www.amazon.com/Best-Sellers-Kindle-Store/zgbs/digital-text/ref=zg_bs_fvp_p_f_digital-text?_encoding=UTF8&tf=1#";
-    private static final int PAGES = 5;
+    private static final int PAGES = 1;
 
     public static void main(String[] args)
     {
@@ -105,7 +105,12 @@ public class Parser
     private String getDetailedInfo(String bookUrl)
     {
         try {
-            Document document = Jsoup.connect(bookUrl).get();
+            Document document = Jsoup.connect(bookUrl)
+                    .userAgent("Mozilla/5.0 Chrome/26.0.1410.64 Safari/537.31")
+                    .followRedirects(true)
+                    .ignoreHttpErrors(true)
+                    .timeout(2000)
+                    .get();
             return getTextBySelect(document, "div.bookDescription_feature_div", "noscript");
         } catch (IOException e) {
             e.printStackTrace();
