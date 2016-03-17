@@ -23,7 +23,8 @@ public class Parser
 
     public static void main(String[] args)
     {
-        new Parser().parse();
+        List<Book> books = new Parser().parse();
+        books.forEach(book -> System.out.println(book));
     }
 
     public List<Book> parse()
@@ -40,7 +41,7 @@ public class Parser
         {
             Document doc = Jsoup.connect(getURL(page)).get();
             Elements bookElements = doc.getElementsByClass("zg_itemImmersion");
-            return bookElements.stream().map(this::processBook);
+            return bookElements.stream().limit(1).map(this::processBook);
         }
         catch (IOException e)
         {
@@ -109,7 +110,6 @@ public class Parser
                     .userAgent("Mozilla/5.0 Chrome/26.0.1410.64 Safari/537.31")
                     .followRedirects(true)
                     .ignoreHttpErrors(true)
-                    .timeout(2000)
                     .get();
             return getTextBySelect(document, "div#bookDescription_feature_div", "noscript");
         } catch (IOException e) {
