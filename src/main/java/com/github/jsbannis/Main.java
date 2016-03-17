@@ -1,3 +1,7 @@
+package com.github.jsbannis;
+
+import com.github.jsbannis.data.Book;
+import com.github.jsbannis.worker.Parser;
 import com.heroku.sdk.jdbc.DatabaseUrl;
 import ratpack.groovy.template.TextTemplateModule;
 import ratpack.guice.Guice;
@@ -10,6 +14,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static ratpack.groovy.Groovy.groovyTemplate;
@@ -34,8 +39,10 @@ public class Main {
               ctx.redirect(301, "/");
             })
             .get(ctx -> ctx.render(groovyTemplate("index.html")))
-            .get("hello", ctx -> {
-                // TODO stuff goes here
+            .get("books", ctx -> {
+              Parser parser = new Parser();
+              List<Book> books = parser.parse();
+              ctx.render(booksToString(books));
             })
             .get("db", ctx -> {
               Connection connection = null;
@@ -67,5 +74,11 @@ public class Main {
         }
       )
     );
+  }
+
+  private static String booksToString(List<Book> books) {
+    StringBuilder sb = new StringBuilder();
+    books.forEach(book -> sb.append(book.toString()));
+    return sb.toString();
   }
 }
