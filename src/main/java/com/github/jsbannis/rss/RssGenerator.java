@@ -34,6 +34,7 @@ public class RssGenerator {
                         entry.setTitle(book._title);
                         entry.setLink(book._link);
                         entry.setPublishedDate(Date.from(Instant.now()));
+                        entry.setUpdatedDate(Date.from(Instant.now())); // FIXME remove; for testing only
 
                         SyndContent description = new SyndContentImpl();
                         description.setType("text/html");
