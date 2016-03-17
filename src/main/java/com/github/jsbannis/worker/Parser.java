@@ -62,7 +62,7 @@ public class Parser
     }
 
     private String processImageString(String imageString) {
-        int i = imageString.lastIndexOf(',');
+        int i = imageString.indexOf(',');
         if(i > 0)
         {
             imageString = imageString.substring(0, i) + ".jpg";
