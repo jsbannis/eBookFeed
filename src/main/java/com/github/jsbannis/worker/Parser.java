@@ -20,6 +20,7 @@ public class Parser
 {
     public static final String BASE = "http://www.amazon.com/Best-Sellers-Kindle-Store/zgbs/digital-text/ref=zg_bs_fvp_p_f_digital-text?_encoding=UTF8&tf=1#";
     private static final int PAGES = 1;
+    private static final int LONG_LIMIT = 128;
 
     public static void main(String[] args)
     {
@@ -41,7 +42,7 @@ public class Parser
         {
             Document doc = Jsoup.connect(getURL(page)).get();
             Elements bookElements = doc.getElementsByClass("zg_itemImmersion");
-            return bookElements.stream().limit(1).map(this::processBook);
+            return bookElements.stream().map(this::processBook);
         }
         catch (IOException e)
         {
@@ -111,7 +112,10 @@ public class Parser
                     .followRedirects(true)
                     .ignoreHttpErrors(true)
                     .get();
-            return getTextBySelect(document, "div#bookDescription_feature_div", "noscript");
+            return getTextBySelect(document, "div#bookDescription_feature_div", "noscript")
+                    .trim()
+                    .substring(0, LONG_LIMIT)
+                    + "...";
         } catch (IOException e) {
             e.printStackTrace();
         }
