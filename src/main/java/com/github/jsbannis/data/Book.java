@@ -1,5 +1,7 @@
 package com.github.jsbannis.data;
 
+import java.time.Instant;
+
 /**
  * Created by jared on 3/16/2016.
  */
@@ -14,10 +16,12 @@ public class Book
     public final String _price;
     public final String _image;
     public final String _detailedInfo;
+    public final Instant _created;
 
     public Book(
         String asin, String rank, String title, String byline, String link,
-        String reviews, String price, String image, String detailedInfo)
+        String reviews, String price, String image, String detailedInfo,
+        Instant created)
     {
         _rank = rank;
         _title = title;
@@ -28,6 +32,7 @@ public class Book
         _image = image;
         _detailedInfo = detailedInfo;
         _asin = asin;
+        _created = created;
     }
 
     @Override
@@ -35,6 +40,7 @@ public class Book
     {
         return "Book{" +
             "_asin='" + _asin + '\'' +
+            "_created'" + _created.toString() + '\'' +
             " _rank='" + _rank + '\'' +
             ", _title='" + _title + '\'' +
             ", _byline='" + _byline + '\'' +

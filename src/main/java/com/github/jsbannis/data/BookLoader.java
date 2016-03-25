@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,11 +32,10 @@ public class BookLoader
         LOG.debug("Querying for books...");
         Statement statement = connection.createStatement();
         ResultSet resultSet = statement.executeQuery(
-            "SELECT * FROM books ORDER BY time");
+            "SELECT * FROM books ORDER BY time ASC");
         while(resultSet.next())
         {
             String asin = resultSet.getString("asin");
-            // TODO time
             String title = resultSet.getString("title");
             String byline = resultSet.getString("byline");
             String link = resultSet.getString("link");
@@ -43,7 +43,8 @@ public class BookLoader
             String price = resultSet.getString("price");
             String image = resultSet.getString("image");
             String detail = resultSet.getString("detail");
-            Book book = new Book(asin, "", title, byline, link, review, price, image, detail);
+            Timestamp created = resultSet.getTimestamp("time");
+            Book book = new Book(asin, "", title, byline, link, review, price, image, detail, created.toInstant());
             ret.add(book);
             LOG.debug("Adding book {}", book);
         }

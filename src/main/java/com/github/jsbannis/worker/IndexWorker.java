@@ -6,6 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -110,7 +111,7 @@ public class IndexWorker
                 PreparedStatement addBookStatement = connection.prepareStatement(
                     "INSERT INTO books VALUES ("
                         + "?," // ASIN
-                        + "now()," // Index date / time
+                        + "?," // Index date / time
                         + "?," // Title
                         + "?," // Byline
                         + "?," // Link
@@ -124,13 +125,14 @@ public class IndexWorker
                     if (!asins.contains(book._asin))
                         continue;
                     addBookStatement.setString(1, book._asin);
-                    addBookStatement.setString(2, book._title);
-                    addBookStatement.setString(3, book._byline);
-                    addBookStatement.setString(4, book._link);
-                    addBookStatement.setString(5, book._reviews);
-                    addBookStatement.setString(6, book._price);
-                    addBookStatement.setString(7, book._image);
-                    addBookStatement.setString(8, book._detailedInfo);
+                    addBookStatement.setTimestamp(2, Timestamp.from(book._created));
+                    addBookStatement.setString(3, book._title);
+                    addBookStatement.setString(4, book._byline);
+                    addBookStatement.setString(5, book._link);
+                    addBookStatement.setString(6, book._reviews);
+                    addBookStatement.setString(7, book._price);
+                    addBookStatement.setString(8, book._image);
+                    addBookStatement.setString(9, book._detailedInfo);
                     addBookStatement.addBatch();
                     LOG.info("Adding ASIN={}", book._asin);
                 }

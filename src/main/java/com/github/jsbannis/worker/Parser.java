@@ -1,6 +1,7 @@
 package com.github.jsbannis.worker;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -64,7 +65,8 @@ public class Parser
             getTextBySelect(bookElement, "div.zg_reviews", "span.a-icon-alt"),
             getTextBySelect(bookElement, "div.zg_price", "strong.price"),
             processImageString(getAttributeBySelect(bookElement, "src", "div.zg_image", "img")),
-            detailedInfo._detailedInfo);
+            detailedInfo._detailedInfo,
+            Instant.now());
         LOG.info("Found book {}", book);
         return book;
     }

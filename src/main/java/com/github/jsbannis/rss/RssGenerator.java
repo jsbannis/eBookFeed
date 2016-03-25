@@ -1,17 +1,19 @@
 package com.github.jsbannis.rss;
 
-import com.github.jsbannis.data.Book;
-import com.rometools.rome.feed.synd.*;
-import com.rometools.rome.io.SyndFeedOutput;
-
 import java.io.StringWriter;
 import java.io.Writer;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import com.github.jsbannis.data.Book;
+import com.rometools.rome.feed.synd.SyndContent;
+import com.rometools.rome.feed.synd.SyndContentImpl;
+import com.rometools.rome.feed.synd.SyndEntry;
+import com.rometools.rome.feed.synd.SyndEntryImpl;
+import com.rometools.rome.feed.synd.SyndFeed;
+import com.rometools.rome.feed.synd.SyndFeedImpl;
+import com.rometools.rome.io.SyndFeedOutput;
 
 /**
  * Created by jared on 3/16/2016.
@@ -33,8 +35,7 @@ public class RssGenerator {
                         SyndEntry entry = new SyndEntryImpl();
                         entry.setTitle(book._title);
                         entry.setLink(book._link);
-                        entry.setPublishedDate(Date.from(Instant.now()));
-                        entry.setUpdatedDate(Date.from(Instant.now())); // FIXME remove; for testing only
+                        entry.setPublishedDate(Date.from(book._created));
 
                         SyndContent description = new SyndContentImpl();
                         description.setType("text/html");
