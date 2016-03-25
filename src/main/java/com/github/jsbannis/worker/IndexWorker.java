@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.github.jsbannis.data.Book;
 import com.heroku.sdk.jdbc.DatabaseUrl;
 
@@ -19,15 +21,24 @@ import com.heroku.sdk.jdbc.DatabaseUrl;
  */
 public class IndexWorker
 {
+    private final static Logger LOG = LoggerFactory.getLogger(IndexWorker.class);
+
     public void doWork() throws URISyntaxException, SQLException
     {
-        Connection connection = null;
+        LOG.info("Crawling pages...");
+        List<Book> books = new Parser().parse();
+        LOG.info("Crawling complete.");
+
+        LOG.info("Connecting to database...");
+        Connection connection;
         connection = DatabaseUrl.extract().getConnection();
+        LOG.info("Connected {}", connection);
         Statement lock = connection.createStatement();
 
         try
         {
             // Lock tables
+            LOG.info("Starting database transaction...");
             lock.execute("BEGIN WORK");
             lock.execute("CREATE TABLE IF NOT EXISTS books "
                 + "("
@@ -43,8 +54,6 @@ public class IndexWorker
                 + "CONSTRAINT \"primary\" PRIMARY KEY (asin)"
                 + ")");
             lock.execute("LOCK TABLE books");
-
-            List<Book> books = new Parser().parse();
 
             // Find books in database that are no longer on the list
             // TODO we can probably move some of the database stuff to Book class
@@ -62,10 +71,12 @@ public class IndexWorker
                 {
                     if (asins.contains(asin))
                     {
+                        LOG.info("Index already contains book with ASIN={}", asin);
                         asins.remove(asin);
                     }
                     else
                     {
+                        LOG.info("Found old entry in index for book with ASIN={}", asin);
                         removeFromDb.add(asin);
                     }
                 }
@@ -73,53 +84,67 @@ public class IndexWorker
             statement.close();
 
             // Remove books that are no longer in database
-            // TODO we can probably move some of the database stuff to Book class
-            PreparedStatement deleteBookStatement = connection.prepareStatement(
-                "DELETE FROM books WHERE asin = ?");
-            for (String asin : removeFromDb)
+            if(!removeFromDb.isEmpty())
             {
-                deleteBookStatement.setString(1, asin);
-                deleteBookStatement.addBatch();
+                // TODO we can probably move some of the database stuff to Book class
+                LOG.info("Removing old books from index...");
+                PreparedStatement deleteBookStatement = connection.prepareStatement(
+                    "DELETE FROM books WHERE asin = ?");
+                for (String asin : removeFromDb)
+                {
+                    deleteBookStatement.setString(1, asin);
+                    deleteBookStatement.addBatch();
+                    LOG.info("Removing ASIN={}", asin);
+                }
+                deleteBookStatement.executeBatch();
+                deleteBookStatement.close();
+                LOG.info("Removing old books complete.");
             }
-            deleteBookStatement.executeBatch();
-            deleteBookStatement.close();
 
-            // Add books that are new
-            // TODO we can probably move some of the database stuff to Book class
-            PreparedStatement addBookStatement = connection.prepareStatement(
-                "INSERT INTO books VALUES ("
-                    + "?," // ASIN
-                    + "now()," // Index date / time
-                    + "?," // Title
-                    + "?," // Byline
-                    + "?," // Link
-                    + "?," // Review
-                    + "?," // Price
-                    + "?," // Image
-                    + "?)" // Detailed info
-            );
-            for (Book book : books)
+            if(!asins.isEmpty())
             {
-                if (!asins.contains(book._asin))
-                    continue;
-                addBookStatement.setString(1, book._asin);
-                addBookStatement.setString(2, book._title);
-                addBookStatement.setString(3, book._byline);
-                addBookStatement.setString(4, book._link);
-                addBookStatement.setString(5, book._reviews);
-                addBookStatement.setString(6, book._price);
-                addBookStatement.setString(7, book._image);
-                addBookStatement.setString(8, book._detailedInfo);
-                addBookStatement.addBatch();
+                // Add books that are new
+                // TODO we can probably move some of the database stuff to Book class
+                LOG.info("Adding new books into index...");
+                PreparedStatement addBookStatement = connection.prepareStatement(
+                    "INSERT INTO books VALUES ("
+                        + "?," // ASIN
+                        + "now()," // Index date / time
+                        + "?," // Title
+                        + "?," // Byline
+                        + "?," // Link
+                        + "?," // Review
+                        + "?," // Price
+                        + "?," // Image
+                        + "?)" // Detailed info
+                );
+                for (Book book : books)
+                {
+                    if (!asins.contains(book._asin))
+                        continue;
+                    addBookStatement.setString(1, book._asin);
+                    addBookStatement.setString(2, book._title);
+                    addBookStatement.setString(3, book._byline);
+                    addBookStatement.setString(4, book._link);
+                    addBookStatement.setString(5, book._reviews);
+                    addBookStatement.setString(6, book._price);
+                    addBookStatement.setString(7, book._image);
+                    addBookStatement.setString(8, book._detailedInfo);
+                    addBookStatement.addBatch();
+                    LOG.info("Adding ASIN={}", book._asin);
+                }
+                addBookStatement.executeBatch();
+                addBookStatement.close();
+                LOG.info("Adding new books complete.");
             }
-            addBookStatement.executeBatch();
-            addBookStatement.close();
         }
         finally
         {
+            LOG.info("Ending database transaction...");
             lock.execute("COMMIT WORK;");
             lock.close();
             connection.close();
+            LOG.info("Done.");
         }
     }
 }
