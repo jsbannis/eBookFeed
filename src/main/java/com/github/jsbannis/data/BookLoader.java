@@ -32,7 +32,7 @@ public class BookLoader
         LOG.debug("Querying for books...");
         Statement statement = connection.createStatement();
         ResultSet resultSet = statement.executeQuery(
-            "SELECT * FROM books ORDER BY time ASC");
+            "SELECT * FROM books ORDER BY time DESC");
         while(resultSet.next())
         {
             String asin = resultSet.getString("asin");

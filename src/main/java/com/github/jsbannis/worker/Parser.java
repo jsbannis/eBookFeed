@@ -26,8 +26,15 @@ public class Parser
     public static final String BASE = "http://www.amazon.com/Best-Sellers-Kindle-Store/zgbs/digital-text/?_encoding=UTF8&tf=1&pg=";
     private static final int PAGES = 5;
 
+    private long _timeOffset = 0;
+    private final static long OFFSET_INCREMENT = 1000;
+    private Instant _publishTime = Instant.now();
+
     public List<Book> parse()
     {
+        _publishTime = Instant.now();
+        _timeOffset = 0;
+
         LOG.info("Begin crawling...");
         return IntStream.rangeClosed(1, PAGES)
             .mapToObj(Integer::valueOf)
@@ -66,9 +73,24 @@ public class Parser
             getTextBySelect(bookElement, "div.zg_price", "strong.price"),
             processImageString(getAttributeBySelect(bookElement, "src", "div.zg_image", "img")),
             detailedInfo._detailedInfo,
-            Instant.now());
+            getPublishTime());
         LOG.info("Found book {}", book);
         return book;
+    }
+
+    /**
+     * We crawl in the forward direction, but want the books to have a created
+     * time such that bigger rank = older (the 'worse' books show up later
+     * in the feed).
+     * <p>
+     * We have a fixed publish time and decrement each by a second to push the
+     * worse books into the past.
+     */
+    private Instant getPublishTime()
+    {
+        Instant time = _publishTime.minusMillis(_timeOffset);
+        _timeOffset += OFFSET_INCREMENT;
+        return time;
     }
 
     private String processImageString(String imageString)
