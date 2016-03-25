@@ -1,7 +1,7 @@
 package com.github.jsbannis;
 
+import com.github.jsbannis.data.BookLoader;
 import com.github.jsbannis.rss.RssGenerator;
-import com.github.jsbannis.worker.Parser;
 import com.github.jsbannis.worker.IndexWorker;
 import static ratpack.groovy.Groovy.groovyTemplate;
 import ratpack.groovy.template.TextTemplateModule;
@@ -47,7 +47,9 @@ public class Main
                         .get(ctx -> ctx.render(groovyTemplate("index.html")))
                         .get("books", ctx -> {
                             ctx.getResponse().contentType("text/xml");
-                            ctx.getResponse().send(new RssGenerator().createRss(new Parser().parse()));
+                            ctx.getResponse().send(
+                                new RssGenerator().createRss(
+                                    new BookLoader().loadBooks()));
                         });
                 }
             )
