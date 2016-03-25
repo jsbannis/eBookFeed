@@ -19,8 +19,7 @@ import com.github.jsbannis.data.Book;
 public class Parser
 {
     public static final String BASE = "http://www.amazon.com/Best-Sellers-Kindle-Store/zgbs/digital-text/ref=zg_bs_fvp_p_f_digital-text?_encoding=UTF8&tf=1#";
-    private static final int PAGES = 1;
-    private static final int LONG_LIMIT = 128;
+    private static final int PAGES = 5;
 
     public static void main(String[] args)
     {
@@ -117,9 +116,7 @@ public class Parser
                 .ignoreHttpErrors(true)
                 .get();
             String detailedInfo = getTextBySelect(document, "div#bookDescription_feature_div", "noscript")
-                .trim()
-                .substring(0, LONG_LIMIT)
-                + "...";
+                .trim();
 
             String asin = "";
             Optional<Element> details = selectElement(document, "div#detail-bullets");
