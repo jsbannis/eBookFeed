@@ -60,6 +60,7 @@ public class IndexWorker
             Set<String> asins = books.stream()
                 .map(book -> book._asin)
                 .collect(Collectors.toSet());
+            LOG.info("Found {} books from crawling.", asins.size());
 
             Set<String> removeFromDb = new HashSet<>();
             Statement statement = connection.createStatement();
@@ -84,10 +85,10 @@ public class IndexWorker
             statement.close();
 
             // Remove books that are no longer in database
+            LOG.info("Removing {} old books from index...", removeFromDb.size());
             if(!removeFromDb.isEmpty())
             {
                 // TODO we can probably move some of the database stuff to Book class
-                LOG.info("Removing old books from index...");
                 PreparedStatement deleteBookStatement = connection.prepareStatement(
                     "DELETE FROM books WHERE asin = ?");
                 for (String asin : removeFromDb)
@@ -98,14 +99,14 @@ public class IndexWorker
                 }
                 deleteBookStatement.executeBatch();
                 deleteBookStatement.close();
-                LOG.info("Removing old books complete.");
             }
+            LOG.info("Removing old books complete.");
 
+            LOG.info("Adding {} new books into index...", asins.size());
             if(!asins.isEmpty())
             {
                 // Add books that are new
                 // TODO we can probably move some of the database stuff to Book class
-                LOG.info("Adding new books into index...");
                 PreparedStatement addBookStatement = connection.prepareStatement(
                     "INSERT INTO books VALUES ("
                         + "?," // ASIN
@@ -135,8 +136,8 @@ public class IndexWorker
                 }
                 addBookStatement.executeBatch();
                 addBookStatement.close();
-                LOG.info("Adding new books complete.");
             }
+            LOG.info("Adding new books complete.");
         }
         finally
         {

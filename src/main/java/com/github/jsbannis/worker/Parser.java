@@ -11,6 +11,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.github.jsbannis.data.Book;
 
 /**
@@ -18,17 +20,14 @@ import com.github.jsbannis.data.Book;
  */
 public class Parser
 {
-    public static final String BASE = "http://www.amazon.com/Best-Sellers-Kindle-Store/zgbs/digital-text/ref=zg_bs_fvp_p_f_digital-text?_encoding=UTF8&tf=1#";
-    private static final int PAGES = 5;
+    private final static Logger LOG = LoggerFactory.getLogger(Parser.class);
 
-    public static void main(String[] args)
-    {
-        List<Book> books = new Parser().parse();
-        books.forEach(System.out::println);
-    }
+    public static final String BASE = "http://www.amazon.com/Best-Sellers-Kindle-Store/zgbs/digital-text/?_encoding=UTF8&tf=1&pg=";
+    private static final int PAGES = 5;
 
     public List<Book> parse()
     {
+        LOG.info("Begin crawling...");
         return IntStream.rangeClosed(1, PAGES)
             .mapToObj(Integer::valueOf)
             .flatMap(this::parsePage)
@@ -39,7 +38,9 @@ public class Parser
     {
         try
         {
-            Document doc = Jsoup.connect(getURL(page)).get();
+            String url = getURL(page);
+            LOG.info("Parsing page {} at URL \"{}\"", page, url);
+            Document doc = Jsoup.connect(url).get();
             Elements bookElements = doc.getElementsByClass("zg_itemImmersion");
             return bookElements.stream().map(this::processBook);
         }
@@ -54,7 +55,7 @@ public class Parser
     {
         String link = getAttributeBySelect(bookElement, "href", "div.zg_title", "a");
         DetailedInfo detailedInfo = getDetailedInfo(link);
-        return new Book(
+        Book book = new Book(
             detailedInfo._asin,
             getTextBySelect(bookElement, "span.zg_rankNumber"),
             getTextBySelect(bookElement, "div.zg_title", "a"),
@@ -64,6 +65,8 @@ public class Parser
             getTextBySelect(bookElement, "div.zg_price", "strong.price"),
             processImageString(getAttributeBySelect(bookElement, "src", "div.zg_image", "img")),
             detailedInfo._detailedInfo);
+        LOG.info("Found book {}", book);
+        return book;
     }
 
     private String processImageString(String imageString)
