@@ -51,4 +51,13 @@ public class Book
             ", _detailedInfo='" + _detailedInfo + '\'' +
             '}';
     }
+
+    public String toShortString()
+    {
+        return "Book{" +
+            "_asin='" + _asin + '\'' +
+            ", _title='" + _title + '\'' +
+            ", _byline='" + _byline + '\'' +
+            '}';
+    }
 }

@@ -78,7 +78,7 @@ public class Parser
             processImageString(getAttributeBySelect(bookElement, "src", "div.zg_image", "img")),
             detailedInfo.get()._detailedInfo,
             getPublishTime());
-        LOG.info("Found book {}", book);
+        LOG.info("Found book {}", book.toShortString());
         return Optional.of(book);
     }
 
