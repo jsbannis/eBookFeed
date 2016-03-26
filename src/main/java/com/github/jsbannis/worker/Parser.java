@@ -26,6 +26,9 @@ public class Parser
     public static final String BASE = "http://www.amazon.com/Best-Sellers-Kindle-Store/zgbs/digital-text/?_encoding=UTF8&tf=1&pg=";
     private static final int PAGES = 5;
 
+    public static final int TIMEOUT = 5000;
+    private static final int ATTEMPTS = 5;
+
     private long _timeOffset = 0;
     private final static long OFFSET_INCREMENT = 1000;
     private Instant _publishTime = Instant.now();
@@ -44,27 +47,28 @@ public class Parser
 
     private Stream<Book> parsePage(int page)
     {
-        try
-        {
-            String url = getURL(page);
-            LOG.info("Parsing page {} at URL \"{}\"", page, url);
-            Document doc = Jsoup.connect(url).get();
-            Elements bookElements = doc.getElementsByClass("zg_itemImmersion");
-            return bookElements.stream().map(this::processBook);
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-        return Stream.empty();
+        String url = getURL(page);
+        LOG.info("Parsing page {} at URL \"{}\"", page, url);
+        Optional<Document> doc = getDocument(url, 0);
+
+        if(!doc.isPresent())
+            return Stream.empty();
+
+        Elements bookElements = doc.get().getElementsByClass("zg_itemImmersion");
+        return bookElements.stream()
+            .map(this::processBook)
+            .filter(Optional::isPresent)
+            .map(Optional::get);
     }
 
-    private Book processBook(Element bookElement)
+    private Optional<Book> processBook(Element bookElement)
     {
         String link = getAttributeBySelect(bookElement, "href", "div.zg_title", "a");
-        DetailedInfo detailedInfo = getDetailedInfo(link);
+        Optional<DetailedInfo> detailedInfo = getDetailedInfo(link);
+        if(!detailedInfo.isPresent())
+            return Optional.empty();
         Book book = new Book(
-            detailedInfo._asin,
+            detailedInfo.get()._asin,
             getTextBySelect(bookElement, "span.zg_rankNumber"),
             getTextBySelect(bookElement, "div.zg_title", "a"),
             getTextBySelect(bookElement, "div.zg_byline"),
@@ -72,10 +76,10 @@ public class Parser
             getTextBySelect(bookElement, "div.zg_reviews", "span.a-icon-alt"),
             getTextBySelect(bookElement, "div.zg_price", "strong.price"),
             processImageString(getAttributeBySelect(bookElement, "src", "div.zg_image", "img")),
-            detailedInfo._detailedInfo,
+            detailedInfo.get()._detailedInfo,
             getPublishTime());
         LOG.info("Found book {}", book);
-        return book;
+        return Optional.of(book);
     }
 
     /**
@@ -133,36 +137,55 @@ public class Parser
         return BASE + Integer.toString(page);
     }
 
-    private DetailedInfo getDetailedInfo(String bookUrl)
+    private Optional<DetailedInfo> getDetailedInfo(String bookUrl)
+    {
+        Optional<Document> document = getDocument(bookUrl, 1);
+        if(!document.isPresent())
+            return Optional.empty();
+
+        String description = getTextBySelect(
+            document.get(),
+            "div#bookDescription_feature_div",
+            "noscript")
+            .trim();
+
+        Optional<Element> details = selectElement(
+            document.get(), "div#detail-bullets");
+        if (!details.isPresent())
+            return Optional.empty();
+
+        String asin = details.get().select("li").stream()
+            .map(element -> element.text().trim())
+            .filter(text -> text.startsWith("ASIN:"))
+            .map(text -> text.substring(5).trim())
+            .findFirst()
+            .orElse("");
+        if(asin.trim().isEmpty())
+            return Optional.empty();
+
+        return Optional.of(new DetailedInfo(asin, description));
+    }
+
+    private Optional<Document> getDocument(String url, int attempt)
     {
         try
         {
-            Document document = Jsoup.connect(bookUrl)
+            return Optional.of(Jsoup.connect(url)
                 .userAgent("Mozilla/5.0 Chrome/26.0.1410.64 Safari/537.31")
-                .followRedirects(true)
+                .timeout(TIMEOUT)
                 .ignoreHttpErrors(true)
-                .get();
-            String detailedInfo = getTextBySelect(document, "div#bookDescription_feature_div", "noscript")
-                .trim();
-
-            String asin = "";
-            Optional<Element> details = selectElement(document, "div#detail-bullets");
-            if (details.isPresent())
-            {
-                asin = details.get().select("li").stream()
-                    .map(element -> element.text().trim())
-                    .filter(text -> text.startsWith("ASIN:"))
-                    .map(text -> text.substring(5).trim())
-                    .findFirst()
-                    .orElse("");
-            }
-            return new DetailedInfo(asin, detailedInfo);
+                .get());
         }
         catch (IOException e)
         {
-            e.printStackTrace();
+            if (attempt < ATTEMPTS)
+            {
+                LOG.info("Get page request for \"{}\" failed. Attempt {} of {}. Retrying...", url, attempt, ATTEMPTS);
+                return getDocument(url, attempt + 1);
+            }
+            LOG.warn("Get page request failed on final attempt. Giving up.");
+            return Optional.empty();
         }
-        return new DetailedInfo("", "");
     }
 
     private class DetailedInfo
