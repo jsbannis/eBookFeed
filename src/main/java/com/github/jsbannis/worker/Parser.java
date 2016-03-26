@@ -51,7 +51,7 @@ public class Parser
         LOG.info("Parsing page {} at URL \"{}\"", page, url);
         Optional<Document> doc = getDocument(url, 0);
 
-        if(!doc.isPresent())
+        if (!doc.isPresent())
             return Stream.empty();
 
         Elements bookElements = doc.get().getElementsByClass("zg_itemImmersion");
@@ -64,13 +64,16 @@ public class Parser
     private Optional<Book> processBook(Element bookElement)
     {
         String link = getAttributeBySelect(bookElement, "href", "div.zg_title", "a");
-        Optional<DetailedInfo> detailedInfo = getDetailedInfo(link);
-        if(!detailedInfo.isPresent())
+        String title = getTextBySelect(bookElement, "div.zg_title", "a");
+
+        Optional<DetailedInfo> detailedInfo = getDetailedInfo(link, title);
+        if (!detailedInfo.isPresent())
             return Optional.empty();
+
         Book book = new Book(
             detailedInfo.get()._asin,
             getTextBySelect(bookElement, "span.zg_rankNumber"),
-            getTextBySelect(bookElement, "div.zg_title", "a"),
+            detailedInfo.get()._title.orElse(title),
             getTextBySelect(bookElement, "div.zg_byline"),
             link,
             getTextBySelect(bookElement, "div.zg_reviews", "span.a-icon-alt"),
@@ -137,10 +140,10 @@ public class Parser
         return BASE + Integer.toString(page);
     }
 
-    private Optional<DetailedInfo> getDetailedInfo(String bookUrl)
+    private Optional<DetailedInfo> getDetailedInfo(String bookUrl, String title)
     {
         Optional<Document> document = getDocument(bookUrl, 1);
-        if(!document.isPresent())
+        if (!document.isPresent())
             return Optional.empty();
 
         String description = getTextBySelect(
@@ -160,9 +163,23 @@ public class Parser
             .map(text -> text.substring(5).trim())
             .findFirst()
             .orElse("");
-        if(asin.trim().isEmpty())
+        if (asin.trim().isEmpty())
             return Optional.empty();
 
+        String longTitle = getTextBySelect(document.get(), "title");
+        if (!longTitle.isEmpty())
+        {
+            longTitle = longTitle
+                // Remove all the possible crud
+                .replace("Amazon.com:", "")
+                .replaceAll("eBook:.*", "")
+                .replaceAll("-\\s+Kindle edition.*", "")
+                .trim();
+            if (longTitle.startsWith(title.substring(0, title.length() - 3)))
+            {
+                return Optional.of(new DetailedInfo(asin, description, longTitle));
+            }
+        }
         return Optional.of(new DetailedInfo(asin, description));
     }
 
@@ -192,13 +209,20 @@ public class Parser
     {
         final String _asin;
         final String _detailedInfo;
-        private DetailedInfo(String asin, String detailedInfo)
+        final Optional<String> _title;
+
+        private DetailedInfo(String asin, String description)
+        {
+            this(asin, description, null);
+        }
+        public DetailedInfo(String asin, String description, String longTitle)
         {
             assert asin != null;
-            assert detailedInfo != null;
+            assert description != null;
 
             _asin = asin;
-            _detailedInfo = detailedInfo;
+            _detailedInfo = description;
+            _title = Optional.ofNullable(longTitle);
         }
     }
 }
