@@ -1,1 +1,1 @@
-web: build/install/gradle-getting-started/bin/gradle-getting-started web
+web: build/install/eBookFeed/bin/eBookFeed web
