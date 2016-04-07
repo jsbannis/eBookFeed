@@ -54,7 +54,14 @@ public class IndexWorker
                 + "detail text, "
                 + "CONSTRAINT \"primary\" PRIMARY KEY (asin)"
                 + ")");
+            lock.execute("CREATE TABLE IF NOT EXISTS history "
+                + "("
+                + "asin text NOT NULL, "
+                + "\"time\" timestamp without time zone NOT NULL, "
+                + "CONSTRAINT \"primary_history\" PRIMARY KEY (asin)"
+                + ")");
             lock.execute("LOCK TABLE books");
+            lock.execute("LOCK TABLE history");
 
             // Find books in database that are no longer on the list
             // TODO we can probably move some of the database stuff to Book class
@@ -78,7 +85,7 @@ public class IndexWorker
                     }
                     else
                     {
-                        LOG.info("Found old entry in index for book with ASIN={}", asin);
+                        LOG.info("Obsolete entry in index for book with ASIN={} will be deleted", asin);
                         removeFromDb.add(asin);
                     }
                 }
@@ -92,16 +99,30 @@ public class IndexWorker
                 // TODO we can probably move some of the database stuff to Book class
                 PreparedStatement deleteBookStatement = connection.prepareStatement(
                     "DELETE FROM books WHERE asin = ?");
+                PreparedStatement moveToHistoryStatement = connection.prepareStatement(
+                    "INSERT INTO history VALUES (?, now())");
                 for (String asin : removeFromDb)
                 {
+                    LOG.info("Removing ASIN={}", asin);
                     deleteBookStatement.setString(1, asin);
                     deleteBookStatement.addBatch();
-                    LOG.info("Removing ASIN={}", asin);
+                    LOG.info("Adding history entry for ASIN={}", asin);
+                    moveToHistoryStatement.setString(1, asin);
+                    moveToHistoryStatement.addBatch();
                 }
                 deleteBookStatement.executeBatch();
                 deleteBookStatement.close();
+                moveToHistoryStatement.executeBatch();
+                moveToHistoryStatement.close();
             }
             LOG.info("Removing old books complete.");
+
+            LOG.info("Searching history for duplicates...");
+            PreparedStatement duplicateStatement = connection.prepareStatement(
+                "SELECT asin FROM history WHERE asin = ?");
+            asins = asins.stream()
+                .filter(asin -> isInHistory(duplicateStatement, asin))
+                .collect(Collectors.toSet());
 
             LOG.info("Adding {} new books into index...", asins.size());
             if(!asins.isEmpty())
@@ -149,5 +170,24 @@ public class IndexWorker
             connection.close();
             LOG.info("Done.");
         }
+    }
+    private boolean isInHistory(PreparedStatement duplicateStatement, String asin)
+    {
+        try
+        {
+            duplicateStatement.setString(1, asin);
+            ResultSet rs = duplicateStatement.executeQuery();
+            boolean notInHistory = !rs.next();
+            if(!notInHistory)
+            {
+                LOG.info("ASIN={} was found in the history and will be ignored", asin);
+            }
+            return notInHistory;
+        }
+        catch (SQLException e)
+        {
+            LOG.warn("Exception when searching for duplicate ASIN=" + asin, e);
+        }
+        return true;
     }
 }
